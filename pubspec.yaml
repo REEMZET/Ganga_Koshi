@@ -1,0 +1,53 @@
+name: ganga_kosi
+description: "Ganga Kosi provides advisory services to farmers. The services include crop recommendations, disease scanning, and fertilizer suggestions"
+
+publish_to: 'none'
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.6 <4.0.0'
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  http: ^1.2.0
+  dio: ^5.4.3+1
+  flutter_widget_from_html: ^0.14.11
+  image_picker: ^1.0.8
+  url_launcher: ^6.1.12
+  whatsapp_unilink: ^2.1.0
+  flutter_speed_dial: ^7.0.0
+  font_awesome_flutter: ^10.7.0
+  firebase_core: ^2.15.1
+  firebase_database: ^10.2.3
+  firebase_auth: ^4.7.3
+  carousel_slider: ^4.2.1
+  intl: ^0.18.0
+  share_plus: ^7.2.1
+  path_provider: ^2.0.11
+  onesignal_flutter: ^5.0.4
+  fluttertoast: ^8.0.7
+  restart_app: ^1.2.1
+  firebase_storage: ^11.6.9
+  webview_flutter: ^4.7.0
+
+
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/images/
+
