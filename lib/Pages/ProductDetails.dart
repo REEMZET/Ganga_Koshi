@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:ganga_kosi/Model/UserModel.dart';
-import 'package:ganga_kosi/Widget/RecomendationsProducts.dart';
+
 import 'package:intl/intl.dart';
 
+import '../Model/UserModel.dart';
 import '../Utils/Toast.dart';
 import '../Widget/DashedDivider.dart';
+import '../Widget/RecomendationsProducts.dart';
 import 'SigninBottomSheetWidget.dart';
 
 class ProductDetails extends StatefulWidget {
@@ -262,16 +263,9 @@ class _ProductDetailsState extends State<ProductDetails> {
                         );
                       }
 
-
-
-
-
-
-
                     },
                     style: ElevatedButton.styleFrom(
-                      primary:
-                          Colors.green, // Change the background color to green
+                      backgroundColor: Colors.green, // Change the background color to green
                     ),
                     child: Text(
                       'Order Now',
@@ -360,7 +354,7 @@ class _PlaceOrderState extends State<PlaceOrder> {
     Completer<void> completer = Completer<void>();
     userRef = FirebaseDatabase.instance
         .reference()
-        .child('GangaKoshi/User/$phoneNumber');
+        .child('GangaKoshi/User/${user!.uid}');
     userRef.onValue.listen((event) {
       final udata = event.snapshot.value;
       if (udata != null) {
@@ -729,9 +723,7 @@ class _PlaceOrderState extends State<PlaceOrder> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      primary:
-                          Colors.green, // Change the background color to green
-                    ),
+                      backgroundColor: Colors.green,),
                     child: Text(
                       'Book Now',
                       style: TextStyle(
@@ -859,7 +851,7 @@ class _PlaceOrderState extends State<PlaceOrder> {
     DatabaseReference _userdatabaseReference = FirebaseDatabase.instance
         .reference()
         .child('GangaKoshi/User/')
-        .child(phoneNumber!)
+        .child(user!.uid)
         .child('orders');
     String orderid = _databaseReference.push().key.toString();
     _databaseReference.child(orderid).set({
@@ -879,6 +871,7 @@ class _PlaceOrderState extends State<PlaceOrder> {
       'Status':'Confirm',
       'ordertime': formattedDateTime, // Convert DateTime to a string
       'timestamp': millisecondsSinceEpoch,
+      'userid':user?.uid,
     }).then((_) {
       DatabaseReference userOrderRef = _userdatabaseReference.push();
       userOrderRef.set({

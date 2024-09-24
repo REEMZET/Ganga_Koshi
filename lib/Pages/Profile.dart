@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:ganga_kosi/Pages/HomePage.dart';
-import 'package:ganga_kosi/Pages/MyBooking.dart';
-import 'package:ganga_kosi/Pages/TestRequest.dart';
-import 'package:ganga_kosi/Utils/AppColors.dart';
 
 import '../Model/UserModel.dart';
+import '../Utils/AppColors.dart';
+import 'HomePage.dart';
+import 'MyBooking.dart';
 import 'Pagerouter.dart';
 import 'SigninBottomSheetWidget.dart';
+import 'TestRequest.dart';
 
 
 class Profile extends StatefulWidget {
@@ -35,7 +35,8 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> getUserDetails(String userPhoneNumber) async {
-    userRef = FirebaseDatabase.instance.reference().child('GangaKoshi/User/${phoneNumber}');
+
+    userRef = FirebaseDatabase.instance.reference().child('GangaKoshi/User/${user!.uid}');
     userRef.onValue.listen((event) {
       final udata = event.snapshot.value;
       if (udata != null) {
@@ -126,7 +127,7 @@ class _ProfileState extends State<Profile> {
                               ));
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green, // Set the background color
+                          backgroundColor: Colors.green, // Set the background color
                         ),
                         child: Row(
                           children: [
@@ -146,7 +147,7 @@ class _ProfileState extends State<Profile> {
                               ));
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green, // Set the background color
+                          backgroundColor: Colors.green, // Set the background color
                         ),
                         child: Row(
                           children: [

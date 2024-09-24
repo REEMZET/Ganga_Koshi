@@ -15,8 +15,12 @@ class _FertilizerFormState extends State<FertilizerForm> {
   TextEditingController resultController = TextEditingController();
   TextEditingController cropController = TextEditingController();
   bool isLoading = false; // Add a boolean to track loading state
+  String? selectedLanguage = 'english'; // Default selected language
 
-  // Function to validate if any field is empty
+  // Function to validate if any field is empty String? selectedLanguage = 'english'; // Default selected language
+  //
+  //   // List of languages to display in the dropdown
+   final List<String> languages = ['hindi', 'english', 'both'];
   bool _validateFields() {
     if (nitrogenController.text.isEmpty ||
         phosphorousController.text.isEmpty ||
@@ -51,6 +55,7 @@ class _FertilizerFormState extends State<FertilizerForm> {
       "nitrogen": int.parse(nitrogenController.text),
       "phosphorous": int.parse(phosphorousController.text),
       "pottasium": int.parse(potassiumController.text),
+      "language":selectedLanguage
     });
 
     try {
@@ -199,6 +204,32 @@ class _FertilizerFormState extends State<FertilizerForm> {
                   ),
                 ],
               ),
+
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black, width: 0.5), // Border color and width
+                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                ),
+                child: DropdownButton<String>(
+                  value: selectedLanguage,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedLanguage = newValue; // Update selected language
+                    });
+                  },
+                  items: languages.map<DropdownMenuItem<String>>((String language) {
+                    return DropdownMenuItem<String>(
+                      value: language,
+                      child: Text(language),
+                    );
+                  }).toList(),
+                  underline: SizedBox(), // Remove default underline
+                  icon: Icon(Icons.language), // Add an icon to the dropdown
+                  isExpanded: true, // Expand to fill the container width
+                  dropdownColor: Colors.white, // Background color of the dropdown
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
@@ -206,7 +237,7 @@ class _FertilizerFormState extends State<FertilizerForm> {
                     predictFertilizer();
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.green, // Change the background color to green
+                    backgroundColor: Colors.green, // Change the background color to green
                   ),
                   child: isLoading
                       ? CircularProgressIndicator() // Show CircularProgressIndicator if loading
@@ -219,7 +250,7 @@ class _FertilizerFormState extends State<FertilizerForm> {
               SizedBox(height: 20),
               resultController.text.isNotEmpty
                   ? HtmlWidget(resultController.text)
-                  : Container(), // Show HtmlWidget only if result is not empty
+                  : Container(),
             ],
           ),
         ),

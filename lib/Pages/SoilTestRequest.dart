@@ -5,22 +5,22 @@ import 'package:flutter/material.dart';
 
 import '../Utils/AppColors.dart';
 
-class MyBooking extends StatefulWidget {
-  const MyBooking({super.key});
+class SoilTestRequest extends StatefulWidget {
+  const SoilTestRequest({super.key});
 
   @override
-  State<MyBooking> createState() => _MyBookingState();
+  State<SoilTestRequest> createState() => _SoilTestRequestState();
 }
 
 User? user = FirebaseAuth.instance.currentUser;
 String? phoneNumber = user?.phoneNumber.toString().substring(3, 13);
-class _MyBookingState extends State<MyBooking> {
+class _SoilTestRequestState extends State<SoilTestRequest> {
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
 
-      appBar: AppBar(title: Text('My Orders'),elevation: 1,),
+      appBar: AppBar(title: Text('Soil Test Report'),elevation: 2,),
       body: Column(
         children: [
           OrderList(),
@@ -31,7 +31,7 @@ class _MyBookingState extends State<MyBooking> {
 
   Widget OrderList() {
     final ref = FirebaseDatabase.instance.ref(
-        '/GangaKoshi/User/${user?.uid}/orders');
+        '/GangaKoshi/User/${user?.uid}/soiltestrequest');
 
 
     return Expanded(
@@ -48,20 +48,14 @@ class _MyBookingState extends State<MyBooking> {
 
         itemBuilder: (context, snapshot, animation, index) {
           String address = snapshot.child('address').value.toString();
-          String deliverycharge = snapshot.child('deliverycharge').value.toString();
-          String gst = snapshot.child('gst').value.toString();
-          String itemimg = snapshot.child('itemimg').value.toString();
-          String itemname = snapshot.child('itemname').value.toString();
-          String itemquantity = snapshot.child('itemquantity').value.toString();
-          String mobile_number = snapshot.child('mobile_number').value.toString();
-          String name = snapshot.child('name').value.toString();
-          String orderid = snapshot.child('orderid').value.toString();
-          String ordertime = snapshot.child('ordertime').value.toString();
+          String bookid = snapshot.child('bookid').value.toString();
+          String bookingtime = snapshot.child('bookingtime').value.toString();
           String pin_code = snapshot.child('pin_code').value.toString();
-          String productcharge = snapshot.child('productcharge').value.toString();
-          String status = snapshot.child('status').value.toString();
+          String status = snapshot.child('Status').value.toString();
           String timestamp = snapshot.child('timestamp').value.toString();
-          String totalprice=snapshot.child('totalprice').value.toString();
+          String slot = snapshot.child('slot').value.toString();
+          String mobile_number=snapshot.child('mobile_number').value.toString();
+          String name=snapshot.child('name').value.toString();
 
 
           return Card(
@@ -86,7 +80,7 @@ class _MyBookingState extends State<MyBooking> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('$status',style: TextStyle(fontSize: 15,fontWeight: FontWeight.bold)),
-                          Text('Date-$ordertime', style: TextStyle(fontSize: 12)),
+                          Text('Date-$bookingtime', style: TextStyle(fontSize: 12)),
                         ],
                       )
                     ],
@@ -101,87 +95,39 @@ class _MyBookingState extends State<MyBooking> {
                       child: Row(
                         children: [
                           SizedBox(width: 4),
-                          Image.network(itemimg,height: 90,width: 80,),
+                          Image.asset('assets/images/soiltestimg.png',height: 90,width: 80,),
                           SizedBox(width: 20),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  itemname,
+                                  'Soil Test Request',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.green
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.green
                                   ),
                                 ),
                                 SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Qty',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      ':- ' + itemquantity,
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  'Name-$name',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.indigo
+                                  ),
                                 ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Total Price',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      ':- ₹' + totalprice,
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
+                                SizedBox(height: 2,),
+                                Text(
+                                  'Slot-$slot',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.blueGrey
+                                  ),
                                 ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Payment Option :-',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'COD',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-
-                                SizedBox(width: 4),
+                                SizedBox(height: 2),
                                 Text(
                                   address+pin_code,
                                   style: TextStyle(
@@ -248,7 +194,7 @@ class _MyBookingState extends State<MyBooking> {
         break;
     }
 
-  
+
 
     return Icon(
       iconData,

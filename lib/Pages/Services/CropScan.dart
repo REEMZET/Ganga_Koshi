@@ -10,7 +10,9 @@ import 'package:image_picker/image_picker.dart' as picker;
 import 'package:intl/intl.dart';
 
 import '../../Model/UserModel.dart';
+import '../Pagerouter.dart';
 import '../SigninBottomSheetWidget.dart';
+import '../TestRequest.dart';
 class CropScan extends StatefulWidget {
   const CropScan({super.key});
 
@@ -40,7 +42,7 @@ class _CropScanState extends State<CropScan> {
     Completer<void> completer = Completer<void>();
     DatabaseReference userRef = FirebaseDatabase.instance
         .reference()
-        .child('GangaKoshi/User/$phoneNumber');
+        .child('GangaKoshi/User/${user!.uid}');
     userRef.onValue.listen((event) {
       final udata = event.snapshot.value;
       if (udata != null) {
@@ -126,7 +128,7 @@ class _CropScanState extends State<CropScan> {
 
 
     DatabaseReference _databaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi').child('Admin/testrequest');
-    DatabaseReference _userdatabaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/User/').child(phoneNumber!).child('testrequest');
+    DatabaseReference _userdatabaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/User/').child(user.uid).child('testrequest');
 
     String requestid=_databaseReference.push().key.toString();
     _databaseReference.child(requestid).set({
@@ -137,7 +139,8 @@ class _CropScanState extends State<CropScan> {
       'result':'pending',
       'time': formattedDateTime,
       'timestamp': millisecondsSinceEpoch,
-      'service':'फसलो का रोग स्कैन'
+      'service':'फसलो का रोग स्कैन',
+      'uid':user.uid
     });
     _userdatabaseReference.child(requestid).set({
       'requestid':requestid,
@@ -154,7 +157,9 @@ class _CropScanState extends State<CropScan> {
         SnackBar(
           content: Text('Submitted Successfully Wait for Response'),
         ),
+
       );
+      Navigator.push(context, customPageRoute(TestRequest()));
       isupLoading = false; // Set isLoading to false after submission
     });
   }
@@ -181,8 +186,18 @@ class _CropScanState extends State<CropScan> {
 
             Align(alignment:Alignment.center,child: Text('रोग का पता लगाने के लिए \nअपनी फसल के पत्ते की तस्वीर लें',textAlign: TextAlign.center,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18,),)),
             SizedBox(height: 5,),
-            InkWell(onTap:(){ _pickImage(picker.ImageSource.camera);},
-                child: Container(
+            InkWell(onTap:(){
+
+              _pickImage(picker.ImageSource.camera);},
+                child: (_image != null)?
+                Container(
+                  height: 300,
+                  width: 200,
+                  child: Image.file(
+                    _image!,
+                    fit: BoxFit.cover,
+                  ),
+                ): Container(
                   width: double.infinity,
                     margin: EdgeInsets.all(15),
                     color: Colors.blue.shade50,
@@ -209,7 +224,7 @@ class _CropScanState extends State<CropScan> {
                 style: TextStyle(color: Colors.white),
               ),
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.green, // Change the background color to green
+                  backgroundColor: Colors.green, // Change the background color to green
                 ),
               ),
             ),

@@ -4,7 +4,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ganga_kosi/Pages/HomePage.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:restart_app/restart_app.dart';
@@ -149,9 +148,9 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
     var externalId = phoneNumber; // You will supply the external id to the OneSignal SDK
     OneSignal.login(externalId);
     OneSignal.User.pushSubscription.optIn();
-
+    User? user = _auth.currentUser;
     try {
-      final DatabaseReference usersRef = FirebaseDatabase.instance.reference().child('GangaKoshi').child('User').child(phoneNumber);
+      final DatabaseReference usersRef = FirebaseDatabase.instance.reference().child('GangaKoshi').child('User').child(user!.uid);
       Map<String, dynamic> userMap = userModel.toMap();
       await usersRef.update(userMap);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('account created')));
@@ -166,7 +165,7 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
   @override
   Widget build(BuildContext context) {
 
-    User? user = _auth.currentUser;
+
 
     return SingleChildScrollView(
       child: Padding(
@@ -309,7 +308,7 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                                 ? CircularProgressIndicator() // Show progress indicator
                                 : Text(buttontext,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 15),),
                             style: ElevatedButton.styleFrom(
-                              primary: Colors.green, // Change the background color to green
+                              backgroundColor: Colors.green, // Change the background color to green
                             ),
                           ),
                         ),

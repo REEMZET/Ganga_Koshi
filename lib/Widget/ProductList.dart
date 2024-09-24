@@ -6,22 +6,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:ganga_kosi/Pages/HomePage.dart';
-import 'package:ganga_kosi/Pages/ProductCateogoryList.dart';
-import 'package:ganga_kosi/Pages/ProductDetails.dart';
-import 'package:ganga_kosi/Pages/Services/SellRequest.dart';
+
 
 import '../Model/Product.dart';
 import '../Model/UserModel.dart';
 import '../Pages/Pagerouter.dart';
+import '../Pages/ProductCateogoryList.dart';
+import '../Pages/ProductDetails.dart';
 import '../Pages/Services/CropsPredict.dart';
+import '../Pages/Services/SellRequest.dart';
 import '../Pages/SigninBottomSheetWidget.dart';
 import '../Utils/Toast.dart';
 import 'PosterSlider.dart';
-
-
-
-
+import 'SearchWidget.dart';
 
 class ProductsList extends StatefulWidget {
   const ProductsList({Key? key}) : super(key: key);
@@ -29,12 +26,13 @@ class ProductsList extends StatefulWidget {
   @override
   State<ProductsList> createState() => _ProductsListState();
 }
+
 User? user = FirebaseAuth.instance.currentUser;
 String? phoneNumber = user?.phoneNumber.toString().substring(3, 13);
+
 class _ProductsListState extends State<ProductsList> {
-
-
-  late DatabaseReference _databaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/products');
+  late DatabaseReference _databaseReference =
+  FirebaseDatabase.instance.reference().child('GangaKoshi/products');
   String? _selectedGender;
   String? _selectedState;
   TextEditingController grainnamecontroller = TextEditingController();
@@ -51,9 +49,9 @@ class _ProductsListState extends State<ProductsList> {
   @override
   void initState() {
     super.initState();
-
     fetchData();
   }
+
   List<ProductModel> products = [];
 
   void fetchData() async {
@@ -64,15 +62,14 @@ class _ProductsListState extends State<ProductsList> {
         // Ensure data is a map before using forEach
         if (data is Map) {
           data.forEach((key, value) {
-            products.add(ProductModel.fromJson(Map<String, dynamic>.from(value)));
+            products
+                .add(ProductModel.fromJson(Map<String, dynamic>.from(value)));
           });
         }
       }
       setState(() {});
     });
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -84,23 +81,33 @@ class _ProductsListState extends State<ProductsList> {
           title: TabBar(
             tabs: [
               Container(
-                margin: EdgeInsets.only(bottom: 4,top: 4),
+                margin: EdgeInsets.only(bottom: 4, top: 4),
                 decoration: BoxDecoration(
                   color: Colors.yellow, // Set the background color
                   borderRadius: BorderRadius.circular(10), // Set the border radius
                 ),
-                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16,), // Add padding
+                padding: EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 16,
+                ), // Add padding
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add_shopping_cart,color: Colors.green,),
+                    Icon(
+                      Icons.add_shopping_cart,
+                      color: Colors.green,
+                    ),
                     SizedBox(width: 8), // Add space between icon and text
-                    Text('खरीदे',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                    Text(
+                      'खरीदे',
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
                   ],
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(bottom: 4,top: 4),
+                margin: EdgeInsets.only(bottom: 4, top: 4),
                 decoration: BoxDecoration(
                   color: Colors.green,
                   borderRadius: BorderRadius.circular(10),
@@ -109,37 +116,38 @@ class _ProductsListState extends State<ProductsList> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.local_florist,color: Colors.yellow,),
+                    Icon(
+                      Icons.local_florist,
+                      color: Colors.yellow,
+                    ),
                     SizedBox(width: 8),
-                    Text('बेचे',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                    Text(
+                      'बेचे',
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
                   ],
                 ),
               ),
             ],
             indicatorColor: Colors.green, // Set the indicator color
             labelColor: Colors.black, // Set the text color of selected tab
-            unselectedLabelColor: Colors.white, // Set the text color of unselected tabs
-          )
-
-
+            unselectedLabelColor:
+            Colors.white, // Set the text color of unselected tabs
+          ),
         ),
         body: TabBarView(
-          children: [
-              itemlist(),
-            Sellwidget()
-          ],
+          children: [itemlist(), Sellwidget()],
         ),
       ),
     );
   }
 
-
-
-  Widget itemlist(){
-
+  Widget itemlist() {
     return SingleChildScrollView(
       child: Column(
         children: [
+          SearchWidget(),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: PosterSliderWidget(),
@@ -148,29 +156,47 @@ class _ProductsListState extends State<ProductsList> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 6),
-                child: Align(alignment:Alignment.topLeft,child: Text('Cateogory',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),)),
+                child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Cateogory',
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    )),
               ),
               Container(
-                  margin: EdgeInsets.only(left: 4,right: 4),
-                  height:130,child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ProductCatWidget(),
-              )),
+                margin: EdgeInsets.only(left: 4, right: 4),
+                height: 130,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: ProductCatWidget(),
+                ),
+              ),
             ],
           ),
           Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(top: 15,left: 10),
-                child: Align(alignment:Alignment.topLeft,child: Text('Products by Ganga Koshi',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),)),
+                padding: const EdgeInsets.only(top: 15, left: 10),
+                child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Products by Ganga Koshi',
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    )),
               ),
-              Container(
-                height:(products.length/2)*220 ,
-                child: GridView.count(
-                  physics: NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2, // Adjust for desired number of columns
-                  children: products.map((product) => productCard(product)).toList(),
+              GridView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.8,
                 ),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  return productCard(products[index]);
+                },
               ),
             ],
           ),
@@ -178,111 +204,128 @@ class _ProductsListState extends State<ProductsList> {
       ),
     );
   }
+
   Widget Sellwidget() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SingleChildScrollView(
         child: Column(
           children: [
-            Image.asset('assets/images/grain.jpg',height: 250,),
-
-
-
-
+            Image.asset(
+              'assets/images/grain.jpg',
+              height: 250,
+            ),
             Padding(
-              padding: const EdgeInsets.only(left: 15,right: 15),
+              padding: const EdgeInsets.only(left: 15, right: 15),
               child: Container(
                 width: double.infinity,
-                child: ElevatedButton(onPressed: (){
-
-                  user=FirebaseAuth.instance.currentUser;
-                  if (user != null) {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      useSafeArea: true,
-                      elevation: 4,
-                      isScrollControlled: true,
-                      enableDrag: true,
-                      showDragHandle: true,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(40.0),
-                        ),
-                      ),
-                      builder: (BuildContext context) {
-                        return SellRequestForm();
-                      },
-                    );
-                  } else {
-                    {
-                      {
-
-                        showModalBottomSheet<void>(
-                          context: context,
-                          useSafeArea: true,
-                          elevation: 4,
-                          isScrollControlled: true,
-                          enableDrag: true,
-                          showDragHandle:true,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(40.0),
-                            ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      showModalBottomSheet<void>(
+                        context: context,
+                        useSafeArea: true,
+                        elevation: 4,
+                        isScrollControlled: true,
+                        enableDrag: true,
+                        showDragHandle: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(40.0),
                           ),
-                          builder: (BuildContext context) {
-                            return Container(
-
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    SignInBottomSheet(onSuccessLogin: (){
-                                      setState(() {
-                                        user=FirebaseAuth.instance.currentUser;
-                                      });
-                                    },)
-                                  ],
-                                ),
+                        ),
+                        builder: (BuildContext context) {
+                          return SellRequestForm();
+                        },
+                      );
+                    } else {
+                      {
+                        {
+                          showModalBottomSheet<void>(
+                            context: context,
+                            useSafeArea: true,
+                            elevation: 4,
+                            isScrollControlled: true,
+                            enableDrag: true,
+                            showDragHandle: true,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(40.0),
                               ),
-                            );
-                          },
-                        );
+                            ),
+                            builder: (BuildContext context) {
+                              return Container(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      SignInBottomSheet(
+                                        onSuccessLogin: () {
+                                          setState(() {
+                                            user =
+                                                FirebaseAuth.instance.currentUser;
+                                          });
+                                        },
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
                       }
                     }
-                  }
-
-                }, child: Text('Sell',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),), style: ElevatedButton.styleFrom(
-                  primary: Colors.green,
-                ),),
+                  },
+                  child: Text(
+                    'Sell',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
+                ),
               ),
             ),
-
-
           ],
         ),
       ),
     );
   }
 
-
-
   Widget productCard(ProductModel product) {
     return InkWell(
-      onTap: (){
-        Navigator.push(context, customPageRoute(ProductDetails(productid: product.productid)));
+      onTap: () {
+        Navigator.push(
+            context, customPageRoute(ProductDetails(productid: product.productid)));
       },
       child: Card(
-        margin: EdgeInsets.all(20),
+        margin: EdgeInsets.all(17),
         elevation: 4,
         surfaceTintColor: Colors.white,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Image.network(product.productimage,height: 115,),
+              padding: const EdgeInsets.only(top: 3),
+              child: Image.network(
+                product.productimage,
+                height: 130,
+              ),
             ),
-            Text(product.productname,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 14),),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Text(
+                product.productname,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                softWrap: true,
+                textAlign: TextAlign.center,
+              ),
+            ),
             Container(
               child: Text(
                 'कीमत- ₹${product.productcost}',
@@ -300,7 +343,7 @@ class _ProductsListState extends State<ProductsList> {
                     Text(
                       '${calculatePercentage(product.productmrp, product.productcost).toStringAsFixed(2)}%',
                       style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: Colors.green,
                           fontWeight: FontWeight.bold),
                     ),
@@ -313,21 +356,18 @@ class _ProductsListState extends State<ProductsList> {
                   child: Text(
                     '${product.productmrp}',
                     style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: Colors.blueGrey,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.lineThrough,
                         // Add this line
                         decorationColor: Colors.blueGrey,
-                        decorationThickness: 3// Add this line if you want the strike-through color to be pink
+                        decorationThickness: 3 // Add this line if you want the strike-through color to be pink
                     ),
                   ),
                 ),
-
-
               ],
             ),
-            SizedBox(height: 4,)
 
           ],
         ),
@@ -346,22 +386,22 @@ class _ProductsListState extends State<ProductsList> {
 
         if (data != null && data is Map) {
           String productcat = data['productcat'].toString();
-          String productimage=data['productimage'].toString();
+          String productimage = data['productimage'].toString();
 
           // Check if the city is not already added to the set
           if (!uniqueSizes.contains(productcat)) {
             uniqueSizes.add(productcat);
             return GestureDetector(
                 onTap: () {
-                  Navigator.push(context, customPageRoute(ProductCateogoryList(productcat: productcat)));
+                  Navigator.push(context,
+                      customPageRoute(ProductCateogoryList(productcat: productcat)));
                 },
                 child: Container(
-
                   width: 120,
                   height: 100,
-                  margin: EdgeInsets.only(left: 2,right: 2),
+                  margin: EdgeInsets.only(left: 2, right: 2),
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 2,right: 2),
+                    padding: const EdgeInsets.only(left: 2, right: 2),
                     child: GridTile(
                       footer: Container(
                         height: 20, // Adjust the height as needed
@@ -378,7 +418,6 @@ class _ProductsListState extends State<ProductsList> {
                       ),
                       child: CircleAvatar(
                         radius: 50,
-
                         backgroundImage: NetworkImage(
                           productimage,
                           // Replace with your image URL
@@ -412,15 +451,4 @@ class _ProductsListState extends State<ProductsList> {
           "Invalid input values. Please provide valid numeric values for MRP and discountedPrice.");
     }
   }
-
-
-
 }
-
-
-
-
-
-
-
-

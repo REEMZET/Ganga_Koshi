@@ -2,22 +2,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:ganga_kosi/Pages/MyBooking.dart';
-import 'package:ganga_kosi/Pages/Profile.dart';
-import 'package:ganga_kosi/Pages/TestRequest.dart';
-import 'package:ganga_kosi/Utils/Toast.dart';
-
 import 'package:url_launcher/url_launcher.dart';
 import 'package:whatsapp_unilink/whatsapp_unilink.dart';
 
 import '../Utils/AppColors.dart';
+import '../Utils/Toast.dart';
 import '../Widget/ProductList.dart';
 import '../Widget/Posts.dart';
+import '../Widget/Profile.dart';
 import '../Widget/Services.dart';
 import '../Widget/WebPageView.dart';
+import 'MyBooking.dart';
 import 'Pagerouter.dart';
 import 'ProductDetails.dart';
 import 'SigninBottomSheetWidget.dart';
+import 'SoilTestRequest.dart';
+import 'TestRequest.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key); // Providing a proper constructor
@@ -29,23 +29,15 @@ class HomePage extends StatefulWidget {
 late User? user;
 class _HomePageState extends State<HomePage> {
 
-
   void launchEnquiryWhatsApp() async {
     String enquirymsg = '''
-🌾 *GangaKoshi* 🌱
+🌾 *गंगा कोशी* 🌱
 
-Hello there! 👋
+नमस्ते! 👋
 
-Subject: Inquiry Regarding Crop Prediction and Fertilizer Advice
+प्रिय गंगा कोशी टीम,
 
-Dear GangaKoshi Team,
-
-I hope this message finds you well. My name is [Your Name], and I am a user of the Ganga Koshi mobile application.
- I am writing to inquire about the crop prediction and fertilizer advice services provided by your company.
-
-As a farmer, I have been using your app to analyze soil test reports and receive recommendations for 
-crop selection and fertilizer application. I must say that I am impressed with the accuracy 
-and efficiency of the predictions provided by your platform.🌾
+मैं आपकी कंपनी द्वारा दी जाने वाली फसल पूर्वानुमान और उर्वरक सलाह सेवाओं के बारे में जानना चाहता हूं। 🌾
 ''';
 
     final link = WhatsAppUnilink(
@@ -63,10 +55,10 @@ and efficiency of the predictions provided by your platform.🌾
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     user=FirebaseAuth.instance.currentUser;
   }
+
   int _backButtonCounter = 0;
   @override
   Widget build(BuildContext context) {
@@ -86,10 +78,7 @@ and efficiency of the predictions provided by your platform.🌾
         child: Scaffold(
           appBar: AppBar(
             elevation: 2,
-            title:  Container(
-              height: 40,
-              child: Image.asset("assets/images/logo.png"),
-            ),
+            title: Align(alignment:Alignment.topLeft,child: Image.asset("assets/images/logo.png",height: 50,)),
             backgroundColor: Colors.white,
             bottom: TabBar(
               labelColor: Colors.black,
@@ -115,7 +104,6 @@ and efficiency of the predictions provided by your platform.🌾
                       } else {
                         {
                           {
-
                             showModalBottomSheet<void>(
                               context: context,
                               useSafeArea: true,
@@ -130,7 +118,6 @@ and efficiency of the predictions provided by your platform.🌾
                               ),
                               builder: (BuildContext context) {
                                 return Container(
-
                                   child: SingleChildScrollView(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -158,8 +145,8 @@ and efficiency of the predictions provided by your platform.🌾
           ),
           body: TabBarView(
             children: [
-              Services(), // Widget for Services tab
-              ProductsList(),  // Widget for Market tab
+              Services(),
+              ProductsList(),
               FeedList()
             ],
           ),
@@ -278,7 +265,7 @@ and efficiency of the predictions provided by your platform.🌾
           ),
           ListTile(
             leading: Icon(Icons.science_rounded),
-            title: Text('Test Request'),
+            title: Text('Test Report'),
             onTap: () {
               user=FirebaseAuth.instance.currentUser;
               if(user!=null){
@@ -322,6 +309,59 @@ and efficiency of the predictions provided by your platform.🌾
 
             },
           ),
+
+          ListTile(
+            leading: Icon(Icons.grass),
+            title: Text('Soil Test Request'),
+            onTap: () {
+              user=FirebaseAuth.instance.currentUser;
+              if(user!=null){
+                Navigator.pop(context);
+                Navigator.push(context, customPageRoute(SoilTestRequest()));
+              }else{
+                Navigator.pop(context);
+                ToastWidget.showToast(context, 'please Login');
+                showModalBottomSheet<void>(
+                  context: context,
+                  useSafeArea: true,
+                  elevation: 4,
+                  isScrollControlled: true,
+                  enableDrag: true,
+                  showDragHandle:true,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(40.0),
+                    ),
+                  ),
+                  builder: (BuildContext context) {
+                    return Container(
+
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            SignInBottomSheet(onSuccessLogin: (){
+                              setState(() {
+                                user=FirebaseAuth.instance.currentUser;
+                              });
+                            },)
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+
+
+            },
+          ),
+
+
+
+
+
+
           ListTile(
             leading: Icon(Icons.person),
             title: Text('Profile'),
@@ -397,7 +437,4 @@ and efficiency of the predictions provided by your platform.🌾
       ),
     );
   }
-
-
-
 }

@@ -1,70 +1,109 @@
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
-
 import '../Model/Product.dart';
-import '../Pages/Pagerouter.dart';
-import '../Pages/ProductDetails.dart';
+import 'Pagerouter.dart';
+import 'ProductDetails.dart';
 
-class ProductCateogoryList extends StatefulWidget {
-  final String productcat;
-  ProductCateogoryList({required this.productcat});
+class Searchpage extends StatefulWidget {
+  const Searchpage({super.key});
 
   @override
-  State<ProductCateogoryList> createState() => _ProductCateogoryListState();
+  State<Searchpage> createState() => _SearchpageState();
 }
 
-class _ProductCateogoryListState extends State<ProductCateogoryList> {
-  late DatabaseReference _databaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/products');
+class _SearchpageState extends State<Searchpage> {
+  late DatabaseReference _databaseReference =
+  FirebaseDatabase.instance.reference().child('GangaKoshi/products');
+  TextEditingController searchController = TextEditingController();
+  List<ProductModel> products = [];
+  List<ProductModel> filteredProducts = [];
 
   @override
   void initState() {
     super.initState();
     fetchData();
   }
-  List<ProductModel> products = [];
 
   void fetchData() async {
-    _databaseReference.orderByChild('productcat').equalTo(widget.productcat).onValue.listen((event) {
+    _databaseReference.onValue.listen((event) {
       final data = event.snapshot.value;
       products.clear();
+      filteredProducts.clear();
       if (data != null) {
-        // Ensure data is a map before using forEach
         if (data is Map) {
           data.forEach((key, value) {
             products.add(ProductModel.fromJson(Map<String, dynamic>.from(value)));
           });
+          filteredProducts = products; // Initially, all products are shown
         }
       }
       setState(() {});
     });
   }
 
+  void filterSearchResults(String query) {
+    if (query.isEmpty) {
+      filteredProducts = products;
+    } else {
+      filteredProducts = products
+          .where((product) =>
+      product.productname.toLowerCase().contains(query.toLowerCase()) ||
+          product.productcost.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.productcat),elevation: 2,),
-      body: Flexible(
-        child:  GridView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.8,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 1,
+        title: Text('Search Product'),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              onChanged: (value) {
+                filterSearchResults(value); // Filter products based on query
+              },
+              decoration: InputDecoration(
+                labelText: 'Search',
+                hintText: 'Search by product name or cost',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                ),
+              ),
+            ),
           ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            return productCard(products[index]);
-          },
-        ),
+          Expanded(
+            child: GridView.builder(
+              physics: BouncingScrollPhysics(),
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: filteredProducts.length,
+              itemBuilder: (context, index) {
+                return productCard(filteredProducts[index]);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+
   Widget productCard(ProductModel product) {
     return InkWell(
       onTap: () {
-        Navigator.push(
-            context, customPageRoute(ProductDetails(productid: product.productid)));
+        Navigator.push(context, customPageRoute(ProductDetails(productid: product.productid)));
       },
       child: Card(
         margin: EdgeInsets.all(17),
@@ -123,20 +162,18 @@ class _ProductCateogoryListState extends State<ProductCateogoryList> {
                         color: Colors.blueGrey,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.lineThrough,
-                        // Add this line
                         decorationColor: Colors.blueGrey,
-                        decorationThickness: 3 // Add this line if you want the strike-through color to be pink
-                    ),
+                        decorationThickness: 3),
                   ),
                 ),
               ],
             ),
-
           ],
         ),
       ),
     );
   }
+
   double calculatePercentage(String mrpString, String discountedPriceString) {
     try {
       double mrp = double.parse(mrpString);
@@ -154,5 +191,4 @@ class _ProductCateogoryListState extends State<ProductCateogoryList> {
           "Invalid input values. Please provide valid numeric values for MRP and discountedPrice.");
     }
   }
-
 }

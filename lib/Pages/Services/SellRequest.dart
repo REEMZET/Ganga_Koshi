@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:ganga_kosi/Utils/Toast.dart';
 
 import '../../Model/UserModel.dart';
+import '../../Utils/Toast.dart';
 
 class SellRequestForm extends StatefulWidget {
   @override
@@ -32,7 +32,7 @@ class _SellRequestFormState extends State<SellRequestForm> {
     Completer<void> completer = Completer<void>();
     userRef = FirebaseDatabase.instance
         .reference()
-        .child('GangaKoshi/User/$phoneNumber');
+        .child('GangaKoshi/User/${user!.uid}');
     userRef.onValue.listen((event) {
       final udata = event.snapshot.value;
       if (udata != null) {
@@ -359,7 +359,7 @@ class _SellRequestFormState extends State<SellRequestForm> {
                       submitSellRequest();
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.green, // Change the background color to green
+                      backgroundColor: Colors.green, // Change the background color to green
                     ),
                     child: Text(
                       'Sell Request',
@@ -388,7 +388,7 @@ class _SellRequestFormState extends State<SellRequestForm> {
         districtnamecontroller.text.isEmpty ||
         _selectedState == null ||
         _selectedGender == null) {
-     ToastWidget.showToast(context, 'All fields are required');
+        ToastWidget.showToast(context, 'All fields are required');
       return;
     }
 

@@ -19,7 +19,7 @@ class _TestRequestState extends State<TestRequest> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Test Request'),elevation: 2,),
+      appBar: AppBar(title: Text('Test Report'),elevation: 2,),
       body: Column(
         children: [
   RequestList()
@@ -31,7 +31,7 @@ class _TestRequestState extends State<TestRequest> {
 
   Widget RequestList() {
     final ref = FirebaseDatabase.instance.ref(
-        '/GangaKoshi/User/$phoneNumber/testrequest');
+        '/GangaKoshi/User/${user!.uid}/testrequest');
 
 
     return Expanded(

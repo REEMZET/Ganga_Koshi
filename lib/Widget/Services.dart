@@ -3,16 +3,17 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:ganga_kosi/Pages/Services/FertilizerPredict.dart';
-import 'package:ganga_kosi/Pages/Services/SoilTest.dart';
-
 import '../Model/UserModel.dart';
 import '../Pages/Pagerouter.dart';
 import '../Pages/ProductDetails.dart';
 import '../Pages/Services/CropScan.dart';
 import '../Pages/Services/CropsPredict.dart';
+import '../Pages/Services/FertilizerPredict.dart';
+import '../Pages/Services/SoilTest.dart';
 import '../Pages/SigninBottomSheetWidget.dart';
+import 'CurrentWeatherWidget.dart';
 import 'Footer.dart';
+import 'WheatherUI.dart';
 
 
 
@@ -35,6 +36,12 @@ class _ServicesState extends State<Services> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.only(left:20,bottom: 2,top:10),
+            child: Align(alignment:Alignment.topLeft,child: Text('आज का मौसम', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: Colors.black))),
+          ),
+
+          Container(margin:EdgeInsets.only(left: 20,right: 20,top: 0,bottom: 10),child: CurrentWeatherWidget()),
           ReusableCardWithImage(title: 'मिट्टी परिक्षण', imagePath: 'assets/images/soiltest.png',onPressed: (){
             User? user = FirebaseAuth.instance.currentUser;
             if(user!=null){

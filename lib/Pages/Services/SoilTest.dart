@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../Model/UserModel.dart';
+import '../Pagerouter.dart';
+import '../SearchPage.dart';
+import '../SoilTestRequest.dart';
 
 class SoilTest extends StatefulWidget {
   const SoilTest({super.key});
@@ -33,7 +36,7 @@ class _SoilTestState extends State<SoilTest> {
     Completer<void> completer = Completer<void>();
     userRef = FirebaseDatabase.instance
         .reference()
-        .child('GangaKoshi/User/$phoneNumber');
+        .child('GangaKoshi/User/${user!.uid}');
     userRef.onValue.listen((event) {
       final udata = event.snapshot.value;
       if (udata != null) {
@@ -365,8 +368,7 @@ class _SoilTestState extends State<SoilTest> {
                           BookSoilTest();
                         },
                         style: ElevatedButton.styleFrom(
-                          primary:
-                          Colors.green, // Change the background color to green
+                          backgroundColor: Colors.green, // Change the background color to green
                         ),
                         child: Text(
                           'Book Now',
@@ -412,8 +414,21 @@ class _SoilTestState extends State<SoilTest> {
         .reference()
         .child('GangaKoshi')
         .child('Admin/SoilTestRequest');
-
+    final usertestref = FirebaseDatabase.instance.ref(
+        '/GangaKoshi/User/${user!.uid}/soiltestrequest');
     String orderid = _databaseReference.push().key.toString();
+    usertestref.child(orderid).set({
+      'name': nameController.text,
+      'mobile_number': phoneController.text,
+      'address':'${villagenamecontroller.text}, ${postnamecontroller.text}, ${districtnamecontroller.text} ,$_selectedState!',
+      'pin_code': pinCodeController.text,
+      'slot':formattedDateTime,
+      'bookid': orderid,
+      'Status':'Confirm',
+      'bookingtime': formattedDate, // Convert DateTime to a string
+      'timestamp': millisecondsSinceEpoch,
+    });
+
     _databaseReference.child(orderid).set({
       'name': nameController.text,
       'mobile_number': phoneController.text,
@@ -424,6 +439,7 @@ class _SoilTestState extends State<SoilTest> {
       'Status':'Confirm',
       'bookingtime': formattedDate, // Convert DateTime to a string
       'timestamp': millisecondsSinceEpoch,
+      'uid':user!.uid,
     }).then((_) {
       nameController.clear();
       phoneController.clear();
@@ -436,6 +452,7 @@ class _SoilTestState extends State<SoilTest> {
           content: Text('Soil testing Booked Successfully'),
         ),
       );
+      Navigator.push(context, customPageRoute(SoilTestRequest()));
       setState(() {});
     }).catchError((error) {
       // Show an error message if submission fails
