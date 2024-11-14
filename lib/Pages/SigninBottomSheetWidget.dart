@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:convert'; // Import this for JSON encoding and decoding
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:restart_app/restart_app.dart';
+import 'package:http/http.dart' as http; // Import for HTTP requests
 
 import '../Model/UserModel.dart';
 import '../Utils/AppColors.dart';
@@ -27,146 +28,125 @@ class SignInScreen extends StatelessWidget {
 }
 
 class SignInBottomSheet extends StatefulWidget {
-
   final VoidCallback onSuccessLogin; // Function argument
 
   SignInBottomSheet({required this.onSuccessLogin}); // Constructor
-
 
   @override
   _SignInBottomSheetState createState() => _SignInBottomSheetState();
 }
 
 class _SignInBottomSheetState extends State<SignInBottomSheet> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   bool otpSent = false;
-  late String _phoneNumber="";
-  late String _verificationId;
+  late String _phoneNumber = "";
   late String _otp;
-  late String buttontext = 'ओटीपी प्राप्त करें';
-
+  late String buttontext = 'ओटीपी प्राप्त करें'; // Button text
   late String _name;
-
 
   @override
   void initState() {
     super.initState();
-
   }
-  Future<void> _verifyPhoneNumber() async {
-    final PhoneVerificationCompleted verificationCompleted =
-        (PhoneAuthCredential credential) async {
-      await _auth.signInWithCredential(credential);
-      User? user = FirebaseAuth.instance.currentUser;
-      DateTime currentDate = DateTime.now();
-      String formattedDate = DateFormat('d/M/yy').format(currentDate);
-      String  device;
-      if (kIsWeb) {
-        device='web';
-      } else {
-        device='app';
 
-      }
-      UserModel userModel = UserModel(
-        name: _name,
-        userPhone: _phoneNumber.substring(3,13),
-        uid: user!.uid.toString(),
-        deviceId: device,
-        regDate: formattedDate,
-      );
-      _pushUserModelToRealtimeDB(userModel);
-      widget.onSuccessLogin();
-      Navigator.pop(context);
+  // Function to send OTP
+  Future<void> sendOtp() async {
+    final url = Uri.parse("https://us-central1-instant-text-413611.cloudfunctions.net/Send_Otp");
 
-    };
-
-    final PhoneVerificationFailed verificationFailed = (FirebaseAuthException e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification Failed: $e')));
-      print('Verification Failed: $e');
-    };
-
-    final PhoneCodeSent codeSent = (String verificationId, int? resendToken) async {
-      _verificationId = verificationId;
-    };
-
-    final PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout = (String verificationId) {};
+    if (_phoneNumber.isEmpty) {
+      print("Please enter a phone number.");
+      return;
+    }
 
     try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: _phoneNumber,
-        verificationCompleted: verificationCompleted,
-        verificationFailed: verificationFailed,
-        codeSent: codeSent,
-        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"phoneNumber": _phoneNumber}),
       );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sending verification code: $e')));
-      print('Error sending verification code: $e');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          otpSent = true;
+        });
+        print("OTP sent successfully: ${data['message']}");
+      } else {
+        print("Failed to send OTP: ${response.body}");
+      }
+    } catch (error) {
+      print("Error sending OTP: $error");
     }
   }
 
-  Future<void> verify() async {
+  // Function to verify OTP and authenticate with Firebase
+  Future<void> verifyOtpAndAuthenticate() async {
+    final url = Uri.parse("https://us-central1-instant-text-413611.cloudfunctions.net/verifyOtpAndAuthenticate");
+
+    if (_phoneNumber.isEmpty || _otp.isEmpty) {
+      print("Please enter both phone number and OTP.");
+      return;
+    }
+
     try {
-      // Use _verificationId and the OTP entered by the user to create a PhoneAuthCredential
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: _otp,
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"phoneNumber": _phoneNumber, "otp": _otp}),
       );
-      await _auth.signInWithCredential(credential);
-      User? user = FirebaseAuth.instance.currentUser;
-      DateTime currentDate = DateTime.now();
-      String formattedDate = DateFormat('d/M/yy').format(currentDate);
-      String  device;
-      if (kIsWeb) {
-        device='web';
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final firebaseToken = data['firebaseToken'];
+
+        // Sign in with the custom Firebase token
+        await FirebaseAuth.instance.signInWithCustomToken(firebaseToken);
+        print("User authenticated successfully.");
+        User? user = FirebaseAuth.instance.currentUser;
+        print("uid of user is ${user?.uid}");
+        _pushUserModelToRealtimeDB();
+        widget.onSuccessLogin();
+        Navigator.pop(context);
       } else {
-        device='app';
-
+        print("Error verifying OTP: ${response.body}");
       }
-      UserModel userModel = UserModel(
-        name: _name,
-        userPhone: _phoneNumber.substring(3,13),
-        uid: user!.uid.toString(),
-        deviceId: device,
-        regDate: formattedDate,
-      );
-
-      _pushUserModelToRealtimeDB(userModel);
-      widget.onSuccessLogin();
-      Navigator.pop(context);
-
-
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error verifying OTP: $e')));
-      print('Error verifying OTP: $e');
+    } catch (error) {
+      print("Error verifying OTP: $error");
     }
   }
 
-  void _pushUserModelToRealtimeDB(UserModel userModel) async {
+  void _pushUserModelToRealtimeDB() async {
     String phoneNumber = _phoneNumber.substring(3, 13);
-    var externalId = phoneNumber; // You will supply the external id to the OneSignal SDK
+    String externalId = phoneNumber;
     OneSignal.login(externalId);
     OneSignal.User.pushSubscription.optIn();
-    User? user = _auth.currentUser;
-    try {
-      final DatabaseReference usersRef = FirebaseDatabase.instance.reference().child('GangaKoshi').child('User').child(user!.uid);
-      Map<String, dynamic> userMap = userModel.toMap();
-      await usersRef.update(userMap);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('account created')));
 
-   // Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding user data to Realtime Database: $e')));
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      try {
+        final DatabaseReference usersRef = FirebaseDatabase.instance.reference().child('GangaKoshi').child('User').child(user.uid);
+        UserModel userModel = UserModel(
+          name: _name,
+          userPhone: phoneNumber,
+          uid: user.uid,
+          deviceId: kIsWeb ? 'web' : 'app',
+          regDate: DateFormat('d/M/yy').format(DateTime.now()),
+        );
+
+        Map<String, dynamic> userMap = userModel.toMap();
+        await usersRef.update(userMap);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Account created')));
+      } catch (e) {
+        print('Error adding user data to Realtime Database: $e'); // Log the error
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding user data to Realtime Database: $e')));
+      }
+    } else {
+      print('User is not authenticated');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
-
-
-
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.only(
@@ -178,9 +158,9 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: Image.asset('assets/images/logo.png',height: 80,),
+                child: Image.asset('assets/images/logo.png', height: 80),
               ),
-               SizedBox(height:4),
+              SizedBox(height: 4),
               Card(
                 margin: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(
@@ -190,19 +170,18 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     children: [
-
                       const SizedBox(height: 2),
                       Padding(
                         padding: const EdgeInsets.all(4.0),
                         child: TextFormField(
-                         onChanged: (value){
-                           _name=value;
-                         },
+                          onChanged: (value) {
+                            _name = value;
+                          },
                           maxLength: 25,
                           keyboardType: TextInputType.text,
                           decoration: InputDecoration(
                             labelText: 'अपना नाम दर्ज करें',
-                            labelStyle: TextStyle(fontSize: 14,color: Colors.green,fontWeight: FontWeight.bold),
+                            labelStyle: TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.bold),
                             border: OutlineInputBorder(
                               borderSide: BorderSide(color: Colors.green),
                             ),
@@ -216,15 +195,14 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                       Padding(
                         padding: const EdgeInsets.all(4.0),
                         child: TextFormField(
-
                           onChanged: (value) {
-                            _phoneNumber = '+91'+value;
+                            _phoneNumber = '+91' + value;
                           },
                           maxLength: 10,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: 'अपना फ़ोन नंबर दर्ज करें',
-                            labelStyle: TextStyle(fontSize: 14,color: Colors.green,fontWeight: FontWeight.bold),
+                            labelStyle: TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.bold),
                             border: OutlineInputBorder(
                               borderSide: BorderSide(color: Colors.green),
                             ),
@@ -235,7 +213,6 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 2),
                       if (otpSent) // Only show OTP text field when OTP is sent
                         TextField(
@@ -248,7 +225,7 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                           onChanged: (value) {
                             _otp = value;
                           },
-                          maxLength: 6,
+                          maxLength: 4,
                         ),
                       const SizedBox(height: 4),
                       Padding(
@@ -264,8 +241,7 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                                     buttontext = 'ओटीपी भेजा जा रहा है';
                                   });
                                   try {
-                                    await _verifyPhoneNumber();
-                                    await Future.delayed(Duration(seconds: 4));
+                                    await sendOtp();
                                     setState(() {
                                       buttontext = 'ओटीपी सत्यापित करें';
                                       otpSent = true; // Set OTP sent state
@@ -282,12 +258,12 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                                   );
                                 }
                               } else {
-                                if (_otp.length == 6) {
+                                if (_otp.length == 4) {
                                   setState(() {
                                     buttontext = 'ओटीपी सत्यापित हो रही है';
                                   });
                                   try {
-                                    await verify();
+                                    await verifyOtpAndAuthenticate();
                                     setState(() {
                                       buttontext = 'ओटीपी सत्यापित हो गई';
                                     });
@@ -305,19 +281,17 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
                               }
                             },
                             child: buttontext == 'ओटीपी भेजा जा रहा है' || buttontext == 'ओटीपी सत्यापित हो रही है'
-                                ? CircularProgressIndicator() // Show progress indicator
-                                : Text(buttontext,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 15),),
+                                ? CircularProgressIndicator(color: Colors.white)
+                                : Text(buttontext),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green, // Change the background color to green
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                           ),
                         ),
                       ),
-
-
-
-                      const SizedBox(height: 8),
-
                     ],
                   ),
                 ),

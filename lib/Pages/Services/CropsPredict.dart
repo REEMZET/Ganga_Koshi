@@ -36,10 +36,46 @@ class _CropPredictState extends State<CropPredict> {
   bool isLoading = false; // Add a boolean to track loading state
   bool isupLoading = false;
   UserModel? userModel;
-  String? selectedLanguage = 'english'; // Default selected language
+
+// Step 1: Define the list of districts
+  final List<String> biharDistricts = [
+    'Araria',
+    'Arwal',
+    'Aurangabad',
+    'Banka',
+    'Begusarai',
+    'Bhagalpur',
+    'Bihar Sharif',
+    'Buxar',
+    'Darbhanga',
+    'East Champaran',
+    'Gaya',
+    'Gopalganj',
+    'Jamui',
+    'Jehanabad',
+    'Khagaria',
+    'Kishanganj',
+    'Lakhisarai',
+    'Madhepura',
+    'Madhubani',
+    'Munger',
+    'Nalanda',
+    'Nawada',
+    'Patna',
+    'Purnia',
+    'Rohtas',
+    'Saharsa',
+    'Samastipur',
+    'Saran',
+    'Sheikhpura',
+    'Sheohar',
+    'Sitamarhi',
+    'Supaul',
+    'Vaishali',
+    'West Champaran',
+  ];
 
   // List of languages to display in the dropdown
-  final List<String> languages = ['hindi', 'english', 'both'];
 
   bool _validateFields() {
     if (nitrogenController.text.isEmpty ||
@@ -68,28 +104,36 @@ class _CropPredictState extends State<CropPredict> {
       isLoading = true;
     });
 
-    var headers = {
-      'Content-Type': 'application/json'
-    };
 
     var data = json.encode({
       "nitrogen": int.parse(nitrogenController.text),
       "phosphorous": int.parse(phosphorousController.text),
       "pottasium": int.parse(potassiumController.text),
       "ph": double.parse(pHController.text),
-      "language": selectedLanguage,
       "district": districtController.text,
     });
 
     try {
+      var headers = {
+        'Content-Type': 'application/json'
+      };
+
       var dio = Dio();
-      var response = await dio.post(
-        'https://ml-api-0rbc.onrender.com/crop-predict',
+      var response = await dio.request(
+        'http://51.20.3.105/crop-predict',
         options: Options(
+          method: 'POST',
           headers: headers,
         ),
         data: data,
       );
+
+      if (response.statusCode == 200) {
+        print(json.encode(response.data));
+      }
+      else {
+        print(response.statusMessage);
+      }
 
       if (response.statusCode == 200) {
         final Map<String, dynamic>? responseData = response.data;
@@ -118,6 +162,74 @@ class _CropPredictState extends State<CropPredict> {
     }
   }
 
+
+
+  Future<void> predictCrop(File? imageFile, String district) async {
+    // Check if an image file is selected
+    if (imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No image selected. Please select an image.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if(districtController.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No Any District selected. Please select District.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isupLoading = true; // Set loading state to true when prediction starts
+    });
+
+    try {
+      // Create FormData with a single MultipartFile for the image
+      var data = FormData.fromMap({
+        'image': await MultipartFile.fromFile(imageFile.path, filename: 'image.jpg'), // Use a valid filename
+        'district': district,
+      });
+
+      var dio = Dio();
+      var response = await dio.post(
+        'http://51.20.3.105/crop-predict',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic>? responseData = response.data;
+        if (responseData != null && responseData.containsKey('prediction')) {
+          setState(() {
+            resultController.text = responseData['prediction'];
+          });
+        } else {
+          throw Exception('Invalid response format');
+        }
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to get prediction. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isupLoading = false; // Ensure loading state is reset after completion
+      });
+    }
+  }
+
+
   Future<void> getUserDetails() async {
     Completer<void> completer = Completer<void>();
     DatabaseReference userRef = FirebaseDatabase.instance
@@ -145,7 +257,7 @@ class _CropPredictState extends State<CropPredict> {
   void submittestreport() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      phoneNumber = user.phoneNumber.toString().substring(3, 13);
+      phoneNumber = user.phoneNumber.toString();
     } else {
       showModalBottomSheet<void>(
         context: context,
@@ -188,55 +300,67 @@ class _CropPredictState extends State<CropPredict> {
       );
       return;
     }
-    setState(() {
-      isupLoading = true; // Set isLoading to true when submitting
-    });
+    predictCrop(_image, "Motihari");
+  }
 
+  Future<void> submitTestPredictionreport(File? imageFile, UserModel? userModel, BuildContext context,String result) async {
+    if (imageFile == null || userModel == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select an image and ensure user information is available.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Upload image to Firebase Storage
     final FirebaseStorage _storage = FirebaseStorage.instance;
     var uploadTask = _storage
         .ref()
         .child('Images/reportimages/${DateTime.now().millisecondsSinceEpoch}.jpg')
-        .putFile(_image!);
+        .putFile(imageFile);
     var imageUrl = await (await uploadTask).ref.getDownloadURL();
 
+    // Prepare request data
     DateTime now = DateTime.now();
     String formattedDateTime = DateFormat('dd-MM-yyyy hh:mm a').format(now);
     int millisecondsSinceEpoch = DateTime.now().millisecondsSinceEpoch;
 
     DatabaseReference _databaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi').child('Admin/testrequest');
-    DatabaseReference _userdatabaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/User/').child(user.uid).child('testrequest');
+    DatabaseReference _userdatabaseReference = FirebaseDatabase.instance.reference().child('GangaKoshi/User/').child(userModel.uid).child('testrequest');
 
     String requestid = _databaseReference.push().key.toString();
     _databaseReference.child(requestid).set({
       'requestid': requestid,
       'reportimg': imageUrl,
-      'username': userModel!.name,
-      'userphone': userModel!.userPhone,
-      'result': 'pending',
+      'username': userModel.name,
+      'userphone': userModel.userPhone,
+      'result': result,
       'time': formattedDateTime,
       'timestamp': millisecondsSinceEpoch,
       'service': 'फ़सलों के सलाह',
-      'uid': user.uid
+      'uid': userModel.uid
     });
+
     _userdatabaseReference.child(requestid).set({
       'requestid': requestid,
       'reportimg': imageUrl,
-      'username': userModel!.name,
-      'userphone': userModel!.userPhone,
-      'result': 'pending',
-      'time': formattedDateTime, // Convert DateTime to a string
+      'username': userModel.name,
+      'userphone': userModel.userPhone,
+      'result': result,
+      'time': formattedDateTime,
       'timestamp': millisecondsSinceEpoch,
       'service': 'फ़सलों के सलाह'
     });
-    setState(() {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Submitted Successfully Wait for Response'),
-        ),
-      );
-      isupLoading = false; // Set isLoading to false after submission
-      Navigator.push(context, customPageRoute(TestRequest()));
-    });
+
+    // Show success message and navigate
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Submitted Successfully. Wait for Response.'),
+      ),
+    );
+    Navigator.push(context, customPageRoute(TestRequest()));
   }
 
   Future<void> _pickImage(picker.ImageSource source) async {
@@ -251,7 +375,7 @@ class _CropPredictState extends State<CropPredict> {
         aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 4.5), // Custom aspect ratio
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Crop Image to only Frist Two Coloumn',
+            toolbarTitle: 'Choose Report Image',
             toolbarColor: Colors.green,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.ratio3x2,
@@ -322,11 +446,11 @@ class _CropPredictState extends State<CropPredict> {
                           children: [
                             if (_image != null)
                               Container(
-                                height: 100,
-                                width: 100,
+                                height: 200,
+                                width: 80,
                                 child: Image.file(
                                   _image!,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                 ),
                               )
                             else
@@ -337,7 +461,7 @@ class _CropPredictState extends State<CropPredict> {
                       )
                   )
               ),
-
+              buildDistrictDropdown(),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
@@ -349,7 +473,7 @@ class _CropPredictState extends State<CropPredict> {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ) // Show CircularProgressIndicator if loading
                       : Text(
-                    'Upload and Submit',
+                    'Submit',
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -465,59 +589,7 @@ class _CropPredictState extends State<CropPredict> {
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: TextFormField(
-                        controller: districtController,
-                        keyboardType: TextInputType.text,
-                        maxLength: 30,
-                        decoration: InputDecoration(
-                          labelText: 'जिला',
-                          labelStyle: TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.bold),
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.green),
-                          ),
-                          counterText: '',
-                          prefixIcon: Icon(
-                            Icons.drag_indicator,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black, width: 0.5), // Border color and width
-                        borderRadius: BorderRadius.circular(4), // Rounded corners
-                      ),
-                      child: DropdownButton<String>(
-                        value: selectedLanguage,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedLanguage = newValue; // Update selected language
-                          });
-                        },
-                        items: languages.map<DropdownMenuItem<String>>((String language) {
-                          return DropdownMenuItem<String>(
-                            value: language,
-                            child: Text(language),
-                          );
-                        }).toList(),
-                        underline: SizedBox(), // Remove default underline
-                        icon: Icon(Icons.language), // Add an icon to the dropdown
-                        isExpanded: true, // Expand to fill the container width
-                        dropdownColor: Colors.white, // Background color of the dropdown
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+             buildDistrictDropdown(),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
@@ -541,7 +613,7 @@ class _CropPredictState extends State<CropPredict> {
               resultController.text.isNotEmpty
                   ? HtmlWidget(
                 'Result:- ${resultController.text}',
-                textStyle: TextStyle(color: Colors.green, fontSize: 20, fontWeight: FontWeight.bold),
+                textStyle: TextStyle(color: Colors.green, fontSize: 20, fontWeight: FontWeight.bold,),
               )
                   : Container(), // Show HtmlWidget only if result is not empty
             ],
@@ -550,4 +622,38 @@ class _CropPredictState extends State<CropPredict> {
       ),
     );
   }
+
+
+
+  Widget buildDistrictDropdown() {
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          labelText: 'Select District',
+          labelStyle: TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.bold),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.green),
+          ),
+        ),
+        value: districtController.text.isNotEmpty ? districtController.text : null,
+        onChanged: (String? newValue) {
+          setState(() {
+            districtController.text = newValue ?? ''; // Update the districtController text
+          });
+        },
+        items: biharDistricts.map<DropdownMenuItem<String>>((String district) {
+          return DropdownMenuItem<String>(
+            value: district,
+            child: Text(district),
+          );
+        }).toList(),
+        // Customize the dropdown appearance
+        icon: Icon(Icons.arrow_drop_down),
+        isExpanded: true,
+      ),
+    );
+  }
 }
+
+

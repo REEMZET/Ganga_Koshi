@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import '../Model/UserModel.dart';
+import '../Pages/Api/Wheateher.dart';
 import '../Pages/Pagerouter.dart';
 import '../Pages/ProductDetails.dart';
 import '../Pages/Services/CropScan.dart';
@@ -26,11 +27,6 @@ class Services extends StatefulWidget {
 }
 
 class _ServicesState extends State<Services> {
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -38,10 +34,11 @@ class _ServicesState extends State<Services> {
         children: [
           Padding(
             padding: const EdgeInsets.only(left:20,bottom: 2,top:10),
-            child: Align(alignment:Alignment.topLeft,child: Text('आज का मौसम', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: Colors.black))),
+            child: Align(alignment:Alignment.topLeft,child: Text('आज का मौसम',
+                style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: Colors.black))),
           ),
 
-          Container(margin:EdgeInsets.only(left: 20,right: 20,top: 0,bottom: 10),child: CurrentWeatherWidget()),
+          Container(height:190,margin:EdgeInsets.only(left: 20,right: 20,top: 0,bottom: 10),child: CurrentWeatherWidget()),
           ReusableCardWithImage(title: 'मिट्टी परिक्षण', imagePath: 'assets/images/soiltest.png',onPressed: (){
             User? user = FirebaseAuth.instance.currentUser;
             if(user!=null){

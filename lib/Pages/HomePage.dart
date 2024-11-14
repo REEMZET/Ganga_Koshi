@@ -1,7 +1,10 @@
+import 'package:GangaKoshi/Pages/ChatBot.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:whatsapp_unilink/whatsapp_unilink.dart';
 
@@ -53,10 +56,15 @@ class _HomePageState extends State<HomePage> {
     launch(phoneUri.toString());
   }
 
+
+
+
+
   @override
   void initState() {
     super.initState();
     user=FirebaseAuth.instance.currentUser;
+
   }
 
   int _backButtonCounter = 0;
@@ -96,11 +104,39 @@ class _HomePageState extends State<HomePage> {
                     {
                       user=FirebaseAuth.instance.currentUser;
                       if (user != null) {
-                        await FirebaseAuth.instance.signOut();
-                        setState(() {
-                          user=FirebaseAuth.instance.currentUser;
-                        });
-                        ToastWidget.showToast(context, 'Logut success');
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Confirm Logout'),
+                              content: Text('Are you sure you want to logout?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text('Cancel'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('Logout'),
+                                  onPressed: () async {
+                                    await FirebaseAuth.instance.signOut();
+                                    setState(() {
+                                      user = FirebaseAuth.instance.currentUser; // Update user state
+                                    });
+                                    ToastWidget.showToast(context, 'Logut success');
+                                    Navigator.of(context).pop(); // Close the dialog
+                                    setState(() {
+                                      user=FirebaseAuth.instance.currentUser;
+                                    });
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+
                       } else {
                         {
                           {
@@ -171,6 +207,13 @@ class _HomePageState extends State<HomePage> {
                 },
                 child: Icon(FontAwesomeIcons.whatsapp),
                 label: 'WhatsApp', // Help text for launching WhatsApp
+              ),
+              SpeedDialChild(
+                onTap: () {
+                  Navigator.push(context, customPageRoute(ChatbotPage()));
+                },
+                child: Icon(FontAwesomeIcons.whatsapp),
+                label: 'Chat Bot', // Help text for launching WhatsApp
               ),
               // Add more SpeedDialChild widgets as needed
             ],
@@ -426,13 +469,38 @@ class _HomePageState extends State<HomePage> {
           ListTile(
             leading: Icon(Icons.logout),
             title: Text('Logout'),
-            onTap: () async {
-              await FirebaseAuth.instance.signOut();
-              setState(() {
-                user=FirebaseAuth.instance.currentUser;
-              });
+            onTap: () {
+              // Show confirmation dialog
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Confirm Logout'),
+                    content: Text('Are you sure you want to logout?'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: Text('Cancel'),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                      TextButton(
+                        child: Text('Logout'),
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          setState(() {
+                            user = FirebaseAuth.instance.currentUser; // Update user state
+                          });
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
+
         ],
       ),
     );
